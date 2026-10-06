@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Grass Journal — a private, offline-first voice and text journal. Your thoughts stay with you." />
+    <link rel="canonical" href="https://grass-journal.view.fast/" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Grass Journal",
+      "alternateName": "Grass",
+      "url": "https://grass-journal.view.fast/",
+      "description": "A private, offline-first voice and text journal. Your thoughts stay with you — no account, no backend, no analytics, no cloud sync.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Any (progressive web app)",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": "Typed journal entries with autosave; voice capture with transactional save; on-device transcription; on-device reflection; feeling-wheel mood check-ins for smartwatches; writing mode; encrypted backups; Fable journal importer"
+    }
+    </script>
+    <meta name="theme-color" content="#1d4d2b" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Grass Journal" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+    <meta property="og:title" content="Grass Journal" />
+    <meta property="og:description" content="A private, offline-first voice and text journal. Your thoughts stay with you." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grass-journal.view.fast/" />
+    <meta property="og:image" content="https://grass-journal.view.fast/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Grass Journal" />
+    <meta name="twitter:description" content="A private, offline-first voice and text journal. Your thoughts stay with you." />
+    <meta name="twitter:image" content="https://grass-journal.view.fast/og-image.jpg" />
+    <!--
+      Content Security Policy. Journal content never leaves the device; the only
+      remote hosts ever contacted are model-weight CDNs during explicit install.
+      Deployed behind a server, prefer delivering this policy as an HTTP header.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; connect-src 'self' https://huggingface.co https://cdn-lfs.huggingface.co https://*.huggingface.co; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Grass Journal</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <main style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.6;">
+        <h1>Grass Journal</h1>
+        <p><strong>Your thoughts stay with you.</strong> Grass Journal is a private,
+        offline-first voice and text journal that runs entirely on your device —
+        no account, no backend, no analytics, no cloud sync.</p>
+        <p>Write entries with autosave, capture voice notes that save before
+        anything else happens, transcribe and reflect with on-device AI, check
+        in with a feeling wheel on your smartwatch, and keep encrypted backups
+        you control. This app needs JavaScript to run.</p>
+      </main>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

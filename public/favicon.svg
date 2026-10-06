@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="gj-orb" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#ffe6bb"/>
+      <stop offset="55%" stop-color="#ffab63"/>
+      <stop offset="100%" stop-color="#ef6a5e"/>
+    </radialGradient>
+    <radialGradient id="gj-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff9a5c" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ff9a5c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#24292f"/>
+  <circle cx="32" cy="41" r="23" fill="url(#gj-glow)"/>
+  <circle cx="32" cy="41" r="13" fill="url(#gj-orb)"/>
+  <path d="M25 49 Q23 32 15 17 Q27 27 30 47 Z" fill="#7d8f36"/>
+  <path d="M31 50 Q30 27 33 9 Q39 28 37 49 Z" fill="#a7ba4b"/>
+  <path d="M38 48 Q38 33 48 23 Q47 39 42 49 Z" fill="#7d8f36"/>
+</svg>

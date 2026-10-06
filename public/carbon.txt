@@ -1,0 +1,21 @@
+version = "0.6"
+last_updated = 2026-10-06
+
+[org]
+# Grass Journal is a personal project, not a company — there is no corporate
+# sustainability report. These are the honest, verifiable facts about its
+# footprint: a static site with no backend, no always-on servers, and no
+# data processing beyond the user's own device.
+disclosures = [
+  { doc_type = 'other', url = 'https://grass-journal.view.fast/llms.txt', title = 'Architecture notes: static site, no backend, on-device AI only' },
+  { doc_type = 'ai-model-card', url = 'https://huggingface.co/openai/whisper-tiny.en', title = 'whisper-tiny.en model card — on-device transcription model (used, not trained by us)' },
+  { doc_type = 'ai-model-card', url = 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct', title = 'Qwen2.5-0.5B-Instruct model card — on-device reflection model (used, not trained by us)' },
+]
+
+[upstream]
+services = [
+  # Static file hosting for the app. No compute, no database, no always-on backend.
+  { domain = 'view.fast', service_type = 'shared-hosting' },
+  # Source of the open-weight AI models, downloaded only when the user explicitly installs them.
+  { domain = 'huggingface.co', service_type = 'cdn' },
+]

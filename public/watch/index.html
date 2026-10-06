@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141210">
+<title>Grass Journal — Feeling Wheel</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: #141210; color: #f2ece4;
+    font-family: system-ui, -apple-system, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 16px;
+  }
+  main { width: 100%; max-width: 320px; }
+  #status { font-size: 1.05rem; color: #f2ece4; min-height: 1.5em; margin: 0 0 8px; }
+  #wheelHint { font-size: 0.8rem; color: #a89c88; margin: 10px 0 0; min-height: 1.2em; }
+  #wheel {
+    position: relative; width: 248px; height: 248px; margin: 0 auto;
+    touch-action: none; -webkit-tap-highlight-color: transparent;
+  }
+  #hub {
+    position: absolute; left: 50%; top: 50%; width: 84px; height: 84px;
+    translate: -50% -50%; border-radius: 50%; border: 2px solid #ffcf99;
+    background: radial-gradient(circle at 32% 30%, #4a3f30, #241f16);
+    color: #fff; font-size: 2rem; cursor: pointer; z-index: 2;
+  }
+  #hub:active { scale: 0.94; }
+  .orb {
+    position: absolute; left: 50%; top: 50%; width: 58px; height: 58px;
+    translate: -50% -50%; border-radius: 50%; border: 0;
+    font-size: 1.7rem; cursor: pointer; color: #fff;
+    background: radial-gradient(circle at 32% 30%, var(--c1), var(--c2));
+    box-shadow: 0 0 14px 2px rgba(255, 180, 110, 0.25);
+    /* radial layout: rotate to angle, push out, counter-rotate so emoji stays upright */
+    transform: rotate(var(--a)) translateY(-98px) rotate(calc(-1 * var(--a)));
+    scale: 0;
+    transition: scale 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: calc(var(--i) * 45ms);
+    pointer-events: none;
+  }
+  #wheel.open .orb { scale: 1; pointer-events: auto; }
+  #wheel.closing .orb { transition-delay: 0ms; }
+  /* Picked orb pulses and glows — it must never vanish. */
+  .orb.pick {
+    transition: scale 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    transition-delay: 0ms;
+    scale: 1.45; z-index: 3;
+    box-shadow: 0 0 30px 10px rgba(255, 200, 140, 0.7);
+  }
+  #flash { font-weight: 700; color: #ffcf99; min-height: 1.5em; margin: 12px 0 0; }
+  #count { color: #a89c88; font-size: 0.9rem; margin: 4px 0 0; }
+  #err { color: #ff9d9d; min-height: 1.5em; margin: 8px 0 0; font-size: 0.9rem; }
+  .ghost {
+    background: transparent; border: 1px solid #5a4f40; color: #c9bda8;
+    border-radius: 999px; padding: 10px 18px; font-size: 0.9rem; cursor: pointer;
+    margin-top: 14px;
+  }
+  #writeBox {
+    width: 100%; min-height: 140px; resize: vertical;
+    background: #1e1a14; color: #f2ece4; border: 1px solid #5a4f40;
+    border-radius: 12px; padding: 12px; font: inherit; font-size: 1rem;
+  }
+  #writeSave {
+    display: block; width: 100%; margin-top: 12px; padding: 14px;
+    border-radius: 999px; border: 0; cursor: pointer;
+    background: #ffcf99; color: #241f16; font: inherit; font-weight: 700; font-size: 1rem;
+  }
+  #writeSave:active { scale: 0.97; }
+  .full { display: inline-block; margin-top: 16px; color: #ffcf99; font-size: 0.9rem; }
+  @media (prefers-reduced-motion: reduce) {
+    #hub:active { scale: 1; }
+    .orb, #wheel.open .orb, .orb.pick { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div id="moodView">
+    <p id="status" aria-live="polite">How are you feeling?</p>
+    <div id="wheel" role="group" aria-label="Feeling wheel">
+      <button id="hub" aria-label="Check in: tap to open the feeling wheel" data-testid="wheel-hub">💭</button>
+    </div>
+    <p id="wheelHint">tap to open, tap a feeling to save</p>
+    <button id="toWrite" class="ghost" data-testid="watch-write-toggle">✎ Write instead</button>
+  </div>
+  <div id="writeView" hidden>
+    <p id="writeStatus" aria-live="polite">Write it down</p>
+    <textarea id="writeBox" rows="6" aria-label="Journal entry text" placeholder="What's on your mind?" data-testid="watch-write-box"></textarea>
+    <button id="writeSave" data-testid="watch-write-save">Save entry</button>
+    <button id="toMood" class="ghost">← Feelings</button>
+  </div>
+  <p id="flash" role="status"></p>
+  <p id="count"></p>
+  <p id="err" role="alert"></p>
+  <a class="full" href="/#/">Open full app →</a>
+</main>
+<script>
+'use strict';
+/* Feeling wheel: a self-reported mood check-in for tiny screens (watches).
+   Zero framework. Writes to the SAME IndexedDB the main app uses
+   (name grass-journal), so check-ins appear in the journal as 'mood' entries.
+   No AI, no network, no analytics — your feeling, your words, your device. */
+var DB_NAME = 'grass-journal', SCHEMA_VERSION = 1;
+var db = null, busy = false;
+
+var FEELINGS = [
+  { emoji: '😊', label: 'Joyful',   c1: '#ffcf5c', c2: '#ff8a3d' },
+  { emoji: '😌', label: 'Calm',     c1: '#8fd694', c2: '#3fa46a' },
+  { emoji: '🌟', label: 'Hopeful',  c1: '#ffe97a', c2: '#ffb63d' },
+  { emoji: '🙏', label: 'Grateful',  c1: '#d1a6ff', c2: '#9a6ee8' },
+  { emoji: '😴', label: 'Tired',    c1: '#b0a89c', c2: '#7d766a' },
+  { emoji: '😢', label: 'Sad',      c1: '#7ec8f7', c2: '#5a7de0' },
+  { emoji: '😟', label: 'Anxious',  c1: '#ffab7a', c2: '#e86a6a' },
+  { emoji: '😠', label: 'Angry',    c1: '#ff7a6b', c2: '#d63d3d' },
+];
+
+var $ = function (id) { return document.getElementById(id); };
+function say(t) { $('status').textContent = t; }
+function err(t) { $('err').textContent = t || ''; }
+function flash(t) {
+  $('flash').textContent = t;
+  setTimeout(function () { if ($('flash').textContent === t) $('flash').textContent = ''; }, 2500);
+}
+function uuid() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (crypto.getRandomValues(new Uint8Array(1))[0] & 15);
+    return (c === 'x' ? r : (r & 3) | 8).toString(16);
+  });
+}
+
+function openDb() {
+  return new Promise(function (resolve, reject) {
+    // Open WITHOUT a version: never trigger an upgrade. The main app uses
+    // Dexie, which opens this same database at native version = declared x 10
+    // (version(1) -> 10). Requesting version 1 explicitly would fail with
+    // "requested version is less than existing". Omitting the version opens
+    // whatever exists; onupgradeneeded only fires when the DB is new.
+    var req = indexedDB.open(DB_NAME);
+    req.onupgradeneeded = function () {
+      // Mirror of the main app's Dexie schema (v1). Only runs when the DB
+      // doesn't exist yet (fresh watch-first visit creates native version 1;
+      // the main app's Dexie later upgrades it to its native version and
+      // diffs the schema, which matches, so the upgrade is a no-op).
+      // Never touches an existing database.
+      var d = req.result;
+      var e = d.createObjectStore('entries', { keyPath: 'id' });
+      ['createdAt', 'entryType', 'favorite', 'deletedAt'].forEach(function (k) { e.createIndex(k, k); });
+      var a = d.createObjectStore('audio', { keyPath: 'id' });
+      ['journalEntryId', 'createdAt'].forEach(function (k) { a.createIndex(k, k); });
+      d.createObjectStore('settings', { keyPath: 'key' });
+      d.createObjectStore('models', { keyPath: 'modelId' });
+    };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+    req.onblocked = function () { reject(new Error('Database is busy. Reload and try again.')); };
+  });
+}
+
+function saveMood(i) {
+  var f = FEELINGS[i];
+  return new Promise(function (resolve, reject) {
+    var now = Date.now();
+    // Self-reported mood only — no AI inference. Renders in the journal
+    // from bodyText like any other entry.
+    var entry = {
+      id: uuid(), schemaVersion: SCHEMA_VERSION, createdAt: now, updatedAt: now,
+      entryType: 'mood', bodyText: f.emoji + ' ' + f.label,
+      transcriptStatus: 'not-started', tags: ['watch', 'mood'], favorite: false,
+    };
+    var tx = db.transaction('entries', 'readwrite');
+    tx.objectStore('entries').put(entry);
+    tx.oncomplete = function () { resolve(f); };
+    tx.onerror = function () { reject(tx.error); };
+    tx.onabort = function () { reject(tx.error || new Error('Save aborted.')); };
+  });
+}
+
+function todayCount() {
+  return new Promise(function (resolve) {
+    try {
+      var start = new Date(); start.setHours(0, 0, 0, 0);
+      var tx = db.transaction('entries', 'readonly');
+      var store = tx.objectStore('entries');
+      var idx = store.index('createdAt');
+      var n = 0;
+      var req = idx.openCursor(IDBKeyRange.lowerBound(start.getTime()));
+      req.onsuccess = function () {
+        var c = req.result;
+        if (!c) { resolve(n); return; }
+        var v = c.value;
+        if (!v.deletedAt && v.tags && v.tags.indexOf('watch') !== -1) n++;
+        c.continue();
+      };
+      req.onerror = function () { resolve(n); };
+    } catch (e) { resolve(0); }
+  });
+}
+
+function refreshCount() {
+  todayCount().then(function (n) {
+    $('count').textContent = n === 0 ? 'No check-ins yet today' : n + ' check-in' + (n === 1 ? '' : 's') + ' today';
+  });
+}
+
+var wheel = $('wheel'), hub = $('hub'), orbs = [];
+var wheelOpen = false, busy = false;
+
+function buildWheel() {
+  FEELINGS.forEach(function (f, i) {
+    var b = document.createElement('button');
+    b.className = 'orb';
+    b.style.setProperty('--a', (i * 45) + 'deg');
+    b.style.setProperty('--i', i);
+    b.style.setProperty('--c1', f.c1);
+    b.style.setProperty('--c2', f.c2);
+    b.textContent = f.emoji;
+    b.setAttribute('aria-label', 'I feel ' + f.label);
+    b.setAttribute('tabindex', '-1');
+    // Tap an orb to save it. No press-and-hold: on watchOS the web viewer's
+    // long-press gesture opens a new tab, so hold-drag is unusable there.
+    b.addEventListener('click', function () {
+      if (wheelOpen && !busy) pick(i, b);
+    });
+    wheel.appendChild(b);
+    orbs.push(b);
+  });
+}
+
+function openWheel() {
+  wheelOpen = true;
+  wheel.classList.remove('closing');
+  wheel.classList.add('open');
+  orbs.forEach(function (o) { o.setAttribute('tabindex', '0'); });
+  say('Choose a feeling');
+}
+
+function closeWheel() {
+  wheelOpen = false;
+  orbs.forEach(function (o) { o.classList.remove('hot', 'pick'); o.setAttribute('tabindex', '-1'); });
+  wheel.classList.add('closing');
+  wheel.classList.remove('open');
+  say('How are you feeling?');
+}
+
+function pick(i, el) {
+  if (busy) return;
+  busy = true;
+  err('');
+  if (el) el.classList.add('pick'); // pulse + glow; the orb stays visible
+  say(FEELINGS[i].emoji + ' ' + FEELINGS[i].label);
+  setTimeout(function () {
+    saveMood(i).then(function (f) {
+      busy = false;
+      closeWheel();
+      flash('Saved ✓ ' + f.emoji);
+      refreshCount();
+    }).catch(function (e) {
+      busy = false;
+      closeWheel();
+      err(e && e.message ? e.message : 'Save failed.');
+    });
+  }, 280);
+}
+
+// Tap the hub to toggle the wheel open/closed.
+hub.addEventListener('click', function () {
+  if (busy) return;
+  if (wheelOpen) closeWheel(); else openWheel();
+});
+hub.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (!busy) { if (wheelOpen) closeWheel(); else openWheel(); }
+  }
+});
+
+// Writing mode: a plain textarea for people who'd rather type than tap a
+// feeling. Same database, same privacy — saved as a text entry.
+function showWrite() {
+  $('moodView').hidden = true;
+  $('writeView').hidden = false;
+  err('');
+  $('writeBox').focus();
+}
+function showMood() {
+  $('writeView').hidden = true;
+  $('moodView').hidden = false;
+  err('');
+}
+$('toWrite').addEventListener('click', showWrite);
+$('toMood').addEventListener('click', showMood);
+$('writeSave').addEventListener('click', function () {
+  if (busy) return;
+  if (!db) { err('Database not open yet — wait a moment and try again.'); return; }
+  var text = $('writeBox').value.trim();
+  if (!text) { err('Write something first.'); return; }
+  busy = true;
+  err('');
+  var now = Date.now();
+  var entry = {
+    id: uuid(), schemaVersion: SCHEMA_VERSION, createdAt: now, updatedAt: now,
+    entryType: 'text', bodyText: text,
+    transcriptStatus: 'none', tags: ['watch'], favorite: false,
+  };
+  var tx = db.transaction('entries', 'readwrite');
+  tx.objectStore('entries').put(entry);
+  tx.oncomplete = function () {
+    busy = false;
+    $('writeBox').value = '';
+    flash('Saved ✓');
+    refreshCount();
+  };
+  tx.onerror = function () { busy = false; err(tx.error && tx.error.message ? tx.error.message : 'Save failed.'); };
+  tx.onabort = function () { busy = false; err('Save aborted.'); };
+});
+
+buildWheel();
+openDb().then(function (d) {
+  db = d;
+  refreshCount();
+}).catch(function (e) {
+  err(e && e.message ? e.message : 'Could not open the journal database.');
+});
+</script>
+</body>
+</html>

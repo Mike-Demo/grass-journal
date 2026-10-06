@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://grass-journal.view.fast/sitemap.xml

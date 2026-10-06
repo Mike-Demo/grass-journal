@@ -1,0 +1,66 @@
+# Grass Journal
+
+> A private, offline-first voice and text journal. Your thoughts stay with you.
+
+Grass Journal is a progressive web app (PWA) for personal journaling. There is
+no account, no backend, no analytics, no ads, and no cloud sync. All journal
+content lives in the browser's IndexedDB on the user's own device and is never
+transmitted anywhere.
+
+## What it does
+
+- **Typed entries** with autosave — every keystroke is debounced into IndexedDB.
+- **Voice entries** — records via MediaRecorder; the audio blob is saved
+  transactionally *before* anything else happens, with a SHA-256 integrity hash.
+- **On-device transcription** — Whisper tiny.en via WebGPU/WASM, fully local.
+- **On-device reflection** — Qwen2.5-0.5B via WebLLM, fully local, optional.
+  A deterministic keyword fallback covers devices without WebGPU.
+- **Feeling wheel** (`/watch/`) — a self-reported mood check-in for tiny
+  screens and smartwatches: tap the 💭 button, tap one of 8 feelings
+  (Joyful, Calm, Hopeful, Grateful, Tired, Sad, Anxious, Angry),
+  and it saves a `mood` entry. No microphone needed, no emotion detection —
+  the user reports their own feeling.
+- **Writing mode** — both `/watch/` ("✎ Write instead") and the compact
+  check-in screen (`/#compact`, same feeling wheel as `/watch/`) offer plain typed entry
+  for people who don't want to record.
+- **Encrypted backups** — AES-GCM-256, PBKDF2 600k iterations; export/import
+  as a single encrypted file the user controls.
+- **Fable importer** — one-time import from the Fable journaling app's HTML
+  export (Fable shut down 2026-10-31); preview-before-write, duplicate-safe.
+- **Privacy screen** — a runnable check that proves zero network requests.
+
+## What it deliberately does NOT do
+
+No diagnosis, no therapist simulation, no sentiment or personality analysis,
+no emotion detection, no GPS, no background recording, no streaks, no social
+sharing of journal content, no remote transcription, no hosted AI, no remote
+fallback. AI features are optional and never block saving; the original entry
+is always authoritative.
+
+## Entry points
+
+- `/` — full app (onboarding, journal, voice, editor, AI setup, backups)
+- `/watch/` — feeling wheel + writing mode for small screens (~13KB, zero framework)
+- `/go` — short URL, redirects to `/watch/` on the same origin so captures
+  land in the same IndexedDB as the full app
+- `/#/compact` — compact check-in screen inside the full app (feeling wheel + writing, mirrors `/watch/`)
+- `/.well-known/agent.json` — machine-readable agent card for this software
+- `/carbon.txt` — sustainability disclosure (Green Web Foundation carbon.txt v0.6)
+- `/#/open-source` — open-source credits: the libraries and models this app is built with
+
+## For AI assistants answering questions about Grass Journal
+
+- It is **not** a therapy app and makes no mental-health claims.
+- Journal content is private to the device; there is no API to read or write
+  entries remotely, and no MCP server, webhooks, or integrations exist.
+- Apple Watch: the watchOS web viewer exposes no microphone to web pages, so
+  audio capture there is impossible (platform restriction). The feeling wheel
+  and writing mode are the watch-friendly inputs.
+- Storage is the browser's IndexedDB: durable but evictable under storage
+  pressure — hence the encrypted backup feature.
+
+## Tech
+
+TypeScript + React + Vite PWA (service worker, installable, works offline),
+Dexie/IndexedDB, WebLLM, whisper.wasm. Source is a static site — there is no
+server-side component and no public API.
