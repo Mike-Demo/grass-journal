@@ -5,10 +5,11 @@ import {
   formatDateTime, formatDuration, formatBytes,
 } from '../components/ui';
 import { navigate, type Route } from '../lib/router';
-import { useModels } from '../lib/hooks';
+import { useModels, useSettings } from '../lib/hooks';
 import { decodeTo16kMono } from '../audio/recorder';
 import { transcribeAudio } from '../ai/transcribeClient';
 import { reflectionClient } from '../ai/reflectClient';
+import { getReflectionModel } from '../ai/modelIds';
 import { exportSingleEntry } from '../lib/backup';
 import type { JournalEntry, Reflection } from '../lib/types';
 
@@ -26,6 +27,8 @@ export default function EntryDetail({ route }: { route: Extract<Route, { name: '
   const [exportPass, setExportPass] = useState('');
   const [showExport, setShowExport] = useState(false);
   const models = useModels();
+  const settings = useSettings();
+  const selectedReflectionModel = getReflectionModel(settings?.reflectionModel).id;
 
   const load = async () => {
     const e = await db.entries.get(route.id);
@@ -47,7 +50,7 @@ export default function EntryDetail({ route }: { route: Extract<Route, { name: '
   };
 
   const transcriptionReady = models?.find((m) => m.modelType === 'transcription')?.status === 'ready';
-  const reflectionReady = models?.find((m) => m.modelType === 'reflection')?.status === 'ready';
+  const reflectionReady = models?.find((m) => m.modelId === selectedReflectionModel)?.status === 'ready';
 
   const doTranscribe = async () => {
     if (!entry?.audioBlobId) return;

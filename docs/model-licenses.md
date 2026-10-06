@@ -21,6 +21,14 @@ codebase (MIT).
 - **Size:** ~450 MB (approximate)
 - **Notes:** Requires WebGPU. Runs fully in a Web Worker; no data leaves the device.
 
+## Reflection (alternative) — Gemma 2 2B IT (quantized)
+
+- **Model:** `gemma-2-2b-it-q4f16_1-MLC` (MLC compilation)
+- **Upstream:** Gemma 2 — **Gemma Terms of Use** (Google; not Apache 2.0 — review the terms before redistributing weights)
+- **Runtime:** Apache TVM / MLC-LLM stack via WebLLM (Apache 2.0)
+- **Size:** ~1.5 GB (approximate)
+- **Notes:** Requires WebGPU. User-selectable alternative to Qwen2.5 on the AI setup screen; Qwen remains the default.
+
 ## Runtime libraries (bundled with the app)
 
 | Library | License |

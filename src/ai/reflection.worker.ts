@@ -1,16 +1,18 @@
 /**
- * Reflection Web Worker — WebLLM, quantized Qwen2.5 0.5B Instruct.
- * Receives ONLY the selected entry's text. Nothing else from the journal is
- * visible here, and nothing is sent anywhere: WebLLM runs fully in this worker.
+ * Reflection Web Worker — WebLLM, quantized open-weight instruct model.
+ * The model is chosen by the main thread (init message) from the known
+ * catalog in modelIds.ts. Receives ONLY the selected entry's text. Nothing
+ * else from the journal is visible here, and nothing is sent anywhere:
+ * WebLLM runs fully in this worker.
  */
 /// <reference lib="webworker" />
 
 import { CreateMLCEngine, type MLCEngineInterface } from '@mlc-ai/web-llm';
 import { REFLECT_GEN_PARAMS } from './prompts';
-import { REFLECT_MODEL_ID } from './modelIds';
+import { REFLECTION_MODELS } from './modelIds';
 
 type InMsg =
-  | { type: 'init' }
+  | { type: 'init'; webllmId: string }
   | { type: 'reflect'; messages: { role: string; content: string }[] }
   | { type: 'reflect-repair'; messages: { role: string; content: string }[] };
 
@@ -21,20 +23,33 @@ type OutMsg =
   | { type: 'error'; message: string };
 
 let engine: MLCEngineInterface | null = null;
+let engineModelId: string | null = null;
+
+const KNOWN_WEBLLM_IDS = new Set(REFLECTION_MODELS.map((m) => m.webllmId));
 
 self.onmessage = async (e: MessageEvent<InMsg>) => {
   const post = (m: OutMsg) => (self as unknown as { postMessage(m: OutMsg): void }).postMessage(m);
   const msg = e.data;
   try {
-    if (!engine) {
-      post({ type: 'progress', progress: 0, detail: 'loading engine' });
-      engine = await CreateMLCEngine(REFLECT_MODEL_ID, {
-        initProgressCallback: (p: { progress?: number; text?: string }) => {
-          post({ type: 'progress', progress: Math.round((p.progress ?? 0) * 100), detail: p.text });
-        },
-        logLevel: 'SILENT',
-      });
+    if (msg.type === 'init') {
+      if (!KNOWN_WEBLLM_IDS.has(msg.webllmId)) {
+        throw new Error(`Unknown reflection model: ${msg.webllmId}`);
+      }
+      if (!engine || engineModelId !== msg.webllmId) {
+        engine = null;
+        engineModelId = msg.webllmId;
+        post({ type: 'progress', progress: 0, detail: 'loading engine' });
+        engine = await CreateMLCEngine(msg.webllmId, {
+          initProgressCallback: (p: { progress?: number; text?: string }) => {
+            post({ type: 'progress', progress: Math.round((p.progress ?? 0) * 100), detail: p.text });
+          },
+          logLevel: 'SILENT',
+        });
+      }
+      post({ type: 'ready' });
+      return;
     }
+    if (!engine) throw new Error('Engine not initialized — send init first.');
     post({ type: 'ready' });
     if (msg.type === 'reflect' || msg.type === 'reflect-repair') {
       // NOTE: no `response_format: json_object` — WebLLM's grammar matcher

@@ -91,7 +91,7 @@ export type ModelStatus =
   | 'unsupported';
 
 export interface ModelInstall {
-  modelId: string; // "whisper-tiny-en" | "qwen2.5-0.5b-instruct"
+  modelId: string; // "whisper-tiny-en" | "qwen2.5-0.5b-instruct" | "gemma-2-2b-it"
   modelType: 'transcription' | 'reflection';
   status: ModelStatus;
   installedAt?: number;

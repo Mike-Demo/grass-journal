@@ -19,7 +19,8 @@ const LIBRARIES: { name: string; license: string; what: string }[] = [
 
 const MODELS: { name: string; license: string; what: string }[] = [
   { name: 'Whisper tiny.en (OpenAI)', license: 'MIT', what: 'Speech-to-text model, runs on your device' },
-  { name: 'Qwen2.5-0.5B-Instruct (Alibaba)', license: 'Apache 2.0', what: 'Reflection model, runs on your device' },
+  { name: 'Qwen2.5-0.5B-Instruct (Alibaba)', license: 'Apache 2.0', what: 'Reflection model option, runs on your device' },
+  { name: 'Gemma 2 2B IT (Google)', license: 'Gemma Terms of Use', what: 'Reflection model option, runs on your device' },
 ];
 
 const TOOLING = 'Vite, TypeScript, vite-plugin-pwa (Workbox), Vitest, Playwright — all MIT or Apache-2.0 — build and test the app. They ship no code to your device.';

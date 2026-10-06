@@ -75,7 +75,7 @@ per-browser settings (Edge, Safari, Firefox, Opera, Chrome).
 | Capability | Engine | Model | Size* | Needs |
 |---|---|---|---|---|
 | Transcription | Transformers.js (worker) | Whisper Tiny English (`Xenova/whisper-tiny.en`) | ~150 MB | WASM (WebGPU if present) |
-| Reflection | WebLLM (worker) | Qwen2.5-0.5B-Instruct `q4f16_1` | ~450 MB | WebGPU |
+| Reflection | WebLLM (worker) | Qwen2.5-0.5B-Instruct `q4f16_1` (default) **or** Gemma 2 2B IT `q4f16_1` — your pick on the AI setup screen | ~450 MB / ~1.5 GB | WebGPU |
 
 \* approximate download size. Both are **manually initiated** and **optional**.
 Without WebGPU, reflection is disabled gracefully and a deterministic on-device

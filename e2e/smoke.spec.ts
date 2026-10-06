@@ -210,6 +210,7 @@ test('open source credits page lists dependencies honestly', async ({ page }) =>
   await expect(page).toHaveURL(/#\/open-source/);
   await expect(page.getByText('Dexie.js')).toBeVisible();
   await expect(page.getByText('Whisper tiny.en (OpenAI)')).toBeVisible();
-  // The page must not claim the app's own source is published.
-  await expect(page.getByText("the app's own source code is not published")).toBeVisible();
+  // The app's own source is public: the page links the repo.
+  await expect(page.getByRole('link', { name: 'github.com/Mike-Demo/grass-journal' })).toBeVisible();
+  await expect(page.getByText('Gemma 2 2B IT (Google)')).toBeVisible();
 });

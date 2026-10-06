@@ -12,7 +12,8 @@
 import { buildReflectMessages, buildReflectRepairMessages, REFLECT_PROMPT_VERSION } from './prompts';
 import { parseReflectionJson, type ValidatedReflection } from '../lib/validation';
 import { deterministicReflection } from './deterministic';
-import { REFLECT_MODEL_ID } from './modelIds';
+import { getReflectionModel } from './modelIds';
+import { getSettings } from '../db';
 import type { Reflection } from '../lib/types';
 
 export type ReflectEvents = {
@@ -24,6 +25,29 @@ type WorkerOut =
   | { type: 'ready' }
   | { type: 'result'; text: string }
   | { type: 'error'; message: string };
+
+/** Load the selected model into a fresh worker. Resolves when ready. */
+function initWorker(
+  worker: Worker,
+  webllmId: string,
+  events: ReflectEvents,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onMessage = (e: MessageEvent) => {
+      const m = e.data as WorkerOut;
+      if (m.type === 'progress') events.onProgress(m.progress, m.detail);
+      else if (m.type === 'ready') {
+        worker.removeEventListener('message', onMessage);
+        resolve();
+      } else if (m.type === 'error') {
+        worker.removeEventListener('message', onMessage);
+        reject(new Error(m.message));
+      }
+    };
+    worker.addEventListener('message', onMessage);
+    worker.postMessage({ type: 'init', webllmId });
+  });
+}
 
 function askWorker(
   worker: Worker,
@@ -54,8 +78,10 @@ export class ReflectionClient {
   async reflect(entryText: string, events: ReflectEvents): Promise<Reflection> {
     const text = entryText.trim();
     if (!text) throw new Error('Nothing to reflect on yet.');
+    const option = getReflectionModel((await getSettings()).reflectionModel);
     const worker = new Worker(new URL('./reflection.worker.ts', import.meta.url), { type: 'module' });
     try {
+      await initWorker(worker, option.webllmId, events);
       const raw = await askWorker(worker, 'reflect', buildReflectMessages(text), events);
       let parsed: ValidatedReflection | null = parseReflectionJson(raw);
       if (!parsed) {
@@ -67,7 +93,7 @@ export class ReflectionClient {
       if (!parsed) throw new Error('The model returned invalid JSON twice. Nothing was saved — try again or use the simple on-device tags.');
       return {
         ...parsed,
-        model: REFLECT_MODEL_ID,
+        model: option.id,
         promptVersion: REFLECT_PROMPT_VERSION,
         generatedAt: Date.now(),
         userEdited: false,

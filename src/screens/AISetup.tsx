@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, ScreenHeader } from '../components/ui';
-import { setModelStatus, useModels } from '../lib/hooks';
+import { setModelStatus, useModels, useSettings, updateSettings } from '../lib/hooks';
 import { detectCapabilities, type Capabilities } from '../lib/capability';
 import { initTranscriptionModel, terminateTranscriptionWorker } from '../ai/transcribeClient';
-import { TRANSCRIBE_MODEL_ID } from '../ai/modelIds';
+import { TRANSCRIBE_MODEL_ID, REFLECTION_MODELS, getReflectionModel, type ReflectionModelOption } from '../ai/modelIds';
 import { isIOS } from '../ai/progress';
 import type { ModelInstall } from '../lib/types';
 
@@ -27,19 +27,11 @@ const CARDS: ModelCard[] = [
     engine: 'Transformers.js (WebGPU when available, WebAssembly fallback)',
     requiresWebGPU: false,
   },
-  {
-    modelId: 'qwen2.5-0.5b-instruct',
-    modelType: 'reflection',
-    title: 'Reflection',
-    description: 'Qwen2.5 0.5B Instruct, quantized (open weights). Writes a short neutral summary, tags, themes, and one optional question — from the selected entry only.',
-    approxSize: '~450 MB',
-    engine: 'WebLLM (requires WebGPU)',
-    requiresWebGPU: true,
-  },
 ];
 
 export default function AISetup() {
   const models = useModels();
+  const settings = useSettings();
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [detail, setDetail] = useState<Record<string, string>>({});
@@ -51,6 +43,11 @@ export default function AISetup() {
   useEffect(() => { detectCapabilities().then(setCaps); }, []);
 
   const statusOf = (id: string): ModelInstall | undefined => models?.find((m) => m.modelId === id);
+  const selectedReflection = getReflectionModel(settings?.reflectionModel);
+
+  const selectReflectionModel = async (id: string) => {
+    await updateSettings({ reflectionModel: id });
+  };
 
   const installTranscription = async () => {
     if (installingRef.current) return;
@@ -77,19 +74,19 @@ export default function AISetup() {
     }
   };
 
-  const installReflection = async () => {
+  const installReflection = async (option: ReflectionModelOption) => {
     if (installingRef.current) return;
     installingRef.current = true;
     setError('');
-    await setModelStatus('qwen2.5-0.5b-instruct', 'reflection', { status: 'downloading', engine: 'web-llm', error: undefined });
+    await setModelStatus(option.id, 'reflection', { status: 'downloading', engine: 'web-llm', error: undefined });
     const worker = new Worker(new URL('../ai/reflection.worker.ts', import.meta.url), { type: 'module' });
     try {
       await new Promise<void>((resolve, reject) => {
         const onMessage = (e: MessageEvent) => {
           const m = e.data as { type: string; progress?: number; detail?: string; message?: string };
           if (m.type === 'progress') {
-            setProgress((s) => ({ ...s, 'qwen2.5-0.5b-instruct': m.progress ?? 0 }));
-            setDetail((s) => ({ ...s, 'qwen2.5-0.5b-instruct': m.detail ?? 'Loading…' }));
+            setProgress((s) => ({ ...s, [option.id]: m.progress ?? 0 }));
+            setDetail((s) => ({ ...s, [option.id]: m.detail ?? 'Loading…' }));
           } else if (m.type === 'ready') {
             worker.removeEventListener('message', onMessage);
             resolve();
@@ -99,13 +96,15 @@ export default function AISetup() {
           }
         };
         worker.addEventListener('message', onMessage);
-        worker.postMessage({ type: 'init' });
+        worker.postMessage({ type: 'init', webllmId: option.webllmId });
       });
-      await setModelStatus('qwen2.5-0.5b-instruct', 'reflection', {
-        status: 'ready', installedAt: Date.now(), lastVerifiedAt: Date.now(), approximateBytes: 450 * 1024 * 1024,
+      await setModelStatus(option.id, 'reflection', {
+        status: 'ready', installedAt: Date.now(), lastVerifiedAt: Date.now(), approximateBytes: option.approxBytes,
       });
+      // Installing a model also selects it.
+      await selectReflectionModel(option.id);
     } catch (e) {
-      await setModelStatus('qwen2.5-0.5b-instruct', 'reflection', { status: 'failed', error: e instanceof Error ? e.message : String(e) });
+      await setModelStatus(option.id, 'reflection', { status: 'failed', error: e instanceof Error ? e.message : String(e) });
       setError('Reflection model failed to install. The journal works fully without it.');
     } finally {
       installingRef.current = false;
@@ -113,7 +112,7 @@ export default function AISetup() {
     }
   };
 
-  const removeModel = async (card: ModelCard) => {
+  const removeModel = async (card: { id: string; modelType: 'transcription' | 'reflection' }) => {
     // Best effort: drop cached weights, then the install record.
     try {
       const keys = await caches.keys();
@@ -122,22 +121,24 @@ export default function AISetup() {
       );
     } catch { /* cache API unavailable */ }
     if (card.modelType === 'transcription') terminateTranscriptionWorker();
-    await setModelStatus(card.modelId, card.modelType, {
+    await setModelStatus(card.id, card.modelType, {
       status: 'not-installed', installedAt: undefined, approximateBytes: undefined, error: undefined,
     });
-    setProgress((s) => ({ ...s, [card.modelId]: 0 }));
+    setProgress((s) => ({ ...s, [card.id]: 0 }));
   };
 
-  const markUnsupported = async (card: ModelCard) => {
-    await setModelStatus(card.modelId, card.modelType, { status: 'unsupported', error: 'WebGPU is not available on this device/browser.' });
+  const markUnsupported = async (id: string, modelType: 'transcription' | 'reflection') => {
+    await setModelStatus(id, modelType, { status: 'unsupported', error: 'WebGPU is not available on this device/browser.' });
   };
 
   useEffect(() => {
     if (!caps) return;
-    for (const card of CARDS) {
-      const st = statusOf(card.modelId);
-      if (card.requiresWebGPU && !caps.webgpu && (!st || st.status === 'not-installed')) {
-        void markUnsupported(card);
+    if (!caps.webgpu) {
+      for (const option of REFLECTION_MODELS) {
+        const st = statusOf(option.id);
+        if (!st || st.status === 'not-installed') {
+          void markUnsupported(option.id, 'reflection');
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -203,26 +204,90 @@ export default function AISetup() {
             )}
             <div className="btn-row">
               {status === 'ready' ? (
-                <Button variant="secondary" onClick={() => removeModel(card)}>Remove model</Button>
+                <Button variant="secondary" onClick={() => removeModel({ id: card.modelId, modelType: card.modelType })}>Remove model</Button>
               ) : unsupported ? (
                 <Button disabled>WebGPU unavailable</Button>
               ) : (
                 <Button
-                  onClick={() => (card.modelType === 'transcription' ? installTranscription() : installReflection())}
+                  onClick={() => installTranscription()}
                   disabled={status === 'downloading'}
                 >
                   {status === 'failed' ? 'Retry install' : `Install (${card.approxSize})`}
                 </Button>
               )}
             </div>
-            {status === 'ready' && card.modelType === 'reflection' && (
-              <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>
-                No model? The entry screen still offers simple on-device keyword tags — no download, no AI.
-              </p>
-            )}
           </section>
         );
       })}
+      <section className="card" aria-label="Reflection model">
+        <h2>Reflection</h2>
+        <p>Pick the on-device model that writes reflections. Both are open weights, both run locally through WebLLM (requires WebGPU), and both do the same job: a short neutral summary, tags, themes, and one optional question — from the selected entry only.</p>
+        <div role="radiogroup" aria-label="Reflection model choice">
+          {REFLECTION_MODELS.map((option) => {
+            const st = statusOf(option.id);
+            const status = st?.status ?? 'not-installed';
+            const selected = selectedReflection.id === option.id;
+            const unsupported = caps !== null && !caps.webgpu;
+            return (
+              <div key={option.id} className="card" style={{ margin: '8px 0' }}>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: unsupported ? 'default' : 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="reflection-model"
+                    checked={selected}
+                    disabled={unsupported}
+                    onChange={() => selectReflectionModel(option.id)}
+                    aria-label={option.title}
+                  />
+                  <span>
+                    <strong>{option.title}</strong>{selected ? ' — selected' : ''}<br />
+                    <span style={{ fontSize: '0.9rem' }}>{option.description}</span>
+                  </span>
+                </label>
+                <dl className="kv">
+                  <dt>Engine</dt><dd>WebLLM (requires WebGPU)</dd>
+                  <dt>Download</dt><dd>{option.approxSize} (approximate)</dd>
+                  <dt>Status</dt>
+                  <dd>
+                    {status === 'ready' ? 'Ready ✓'
+                      : status === 'downloading' ? 'Downloading…'
+                      : status === 'failed' ? 'Failed — retry available'
+                      : status === 'unsupported' ? 'Unsupported on this device'
+                      : 'Not installed'}
+                  </dd>
+                  {st?.installedAt && (<><dt>Installed</dt><dd>{new Date(st.installedAt).toLocaleDateString()}</dd></>)}
+                </dl>
+                {status === 'downloading' && (
+                  <div role="status" aria-live="polite" style={{ margin: '8px 0' }}>
+                    <p>{detail[option.id] ?? 'Downloading…'} {progress[option.id] ?? 0}%</p>
+                    <div className="progress"><div style={{ width: `${progress[option.id] ?? 0}%` }} /></div>
+                  </div>
+                )}
+                {st?.error && status !== 'downloading' && (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>Last error: {st.error}</p>
+                )}
+                <div className="btn-row">
+                  {status === 'ready' ? (
+                    <Button variant="secondary" onClick={() => removeModel({ id: option.id, modelType: 'reflection' })}>Remove model</Button>
+                  ) : unsupported ? (
+                    <Button disabled>WebGPU unavailable</Button>
+                  ) : (
+                    <Button
+                      onClick={() => installReflection(option)}
+                      disabled={status === 'downloading'}
+                    >
+                      {status === 'failed' ? 'Retry install' : `Install (${option.approxSize})`}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>
+          No model? The entry screen still offers simple on-device keyword tags — no download, no AI.
+        </p>
+      </section>
       <div className="notice ok">
         <p><strong>Privacy note:</strong> models are fetched from public open-source CDNs (Hugging Face). Only model weights download — your entries never upload.</p>
       </div>
