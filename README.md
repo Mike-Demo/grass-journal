@@ -150,4 +150,6 @@ multi-user, collaboration, servers of any kind.
 ## License
 
 MIT — see [LICENSE](LICENSE). AI model weights carry their own licenses
-([`docs/model-licenses.md`](docs/model-licenses.md)).
+([`docs/model-licenses.md`](docs/model-licenses.md)). Full credits for every
+library, model, and tool — with licenses — are on the
+[open-source credits page](https://grass-journal.view.fast/#/open-source).
