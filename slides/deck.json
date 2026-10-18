@@ -1,0 +1,224 @@
+{
+  "boltSlidesVersion": 1,
+  "boltSlidesId": "11011050-f9d6-4d43-8a9e-3e43af51bbaf",
+  "deck": {
+    "title": "Grass Journal — a journal that grows with you",
+    "transition": "fade",
+    "font": "fraunces",
+    "accent": "#7ccb5d"
+  },
+  "slides": [
+    {
+      "id": "s1",
+      "position": 0,
+      "layout": "cover",
+      "props": {
+        "kicker": "Open source · Mike-Demo/grass-journal",
+        "title": "A journal that ==grows== with you.",
+        "subtitle": "Grass Journal is a gentle daily journaling app: write a little each day, and watch your practice take root.",
+        "image": "https://images.pexels.com/photos/12414271/pexels-photo-12414271.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "dim": 0.55,
+        "foot": "Grass Journal · 2026"
+      },
+      "background": {
+        "type": "image",
+        "url": "https://images.pexels.com/photos/12414271/pexels-photo-12414271.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "dim": 0.62
+      },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Open softly. Grass Journal isn't another productivity tool — it's a small daily ritual that leaves something beautiful behind.",
+      "status": "none"
+    },
+    {
+      "id": "s2",
+      "position": 1,
+      "layout": "contrast",
+      "props": {
+        "kicker": "The problem",
+        "title": "The blank page wins.",
+        "left": {
+          "label": "Today",
+          "title": "Journaling apps today",
+          "points": [
+            "Heavy setups and walls of prompts",
+            "==Streak-shaming== when you miss a day",
+            "So feature-packed that writing gets lost",
+            "Guilt builds, and people quietly quit"
+          ]
+        },
+        "right": {
+          "label": "Needed",
+          "title": "What actually keeps a habit",
+          "points": [
+            "A calm, low-friction place to write",
+            "Progress you can ==see==, not points you can lose",
+            "Short entries, no pressure to be profound",
+            "A reason to come back tomorrow"
+          ]
+        }
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Most journaling apps compete on features and streaks — which is exactly why people abandon them. The failure mode is guilt, not laziness.",
+      "status": "none"
+    },
+    {
+      "id": "s3",
+      "position": 2,
+      "layout": "bigNumber",
+      "props": {
+        "kicker": "The stakes",
+        "value": "1 week",
+        "caption": "is about all it takes for most people to quit a journaling app — the practice never gets past the hardest days",
+        "foot": "The habit dies before the reward ever shows up"
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": "zoom",
+      "nav": null,
+      "notes": "Land the pain point: the drop-off happens in the first days, right when nothing visible has been earned yet. That's the gap Grass Journal closes.",
+      "status": "none"
+    },
+    {
+      "id": "s4",
+      "position": 3,
+      "layout": "manifesto",
+      "props": {
+        "label": "The idea",
+        "text": "Journaling is ==gardening==. Each day's short entry is a blade of grass. Over weeks, your journal becomes a meadow — and your consistency is visible at a glance, ==without a single streak to lose==."
+      },
+      "background": {
+        "type": "gradient",
+        "from": "#06080d",
+        "to": "#0c1508",
+        "angle": 160
+      },
+      "animation": "fade",
+      "transition": null,
+      "nav": null,
+      "notes": "This is the heart of the pitch. A meadow never scolds you for the days it didn't rain — it just keeps growing. Same principle for the journal.",
+      "status": "none"
+    },
+    {
+      "id": "s5",
+      "position": 4,
+      "layout": "steps",
+      "props": {
+        "kicker": "What it does",
+        "title": "Open. Write a few lines. Done.",
+        "items": [
+          {
+            "title": "Open",
+            "body": "One calm page greets you — no dashboards, no prompts demanding depth."
+          },
+          {
+            "title": "Write",
+            "body": "A short daily entry. Two honest lines count as much as two pages."
+          },
+          {
+            "title": "Done",
+            "body": "Close the app. Your meadow quietly grows one blade taller."
+          },
+          {
+            "title": "Return",
+            "body": "The growing meadow is the reward — no guilt mechanics, no noisy gamification."
+          }
+        ]
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Walk through a whole day's session in under thirty seconds. Emphasize that the visualization reflects the days — it never judges them.",
+      "status": "none"
+    },
+    {
+      "id": "s6",
+      "position": 5,
+      "layout": "bento",
+      "props": {
+        "kicker": "Key features",
+        "title": "Small by design.",
+        "tiles": [
+          {
+            "title": "The meadow",
+            "body": "A living growth view of your entries — consistency made visible at a glance.",
+            "c": 3,
+            "variant": "accent"
+          },
+          {
+            "title": "Low-friction entries",
+            "body": "Open to write in seconds; short entries are the intended use, not a shortcut.",
+            "c": 3
+          },
+          {
+            "title": "No streaks, no shame",
+            "body": "Missed days simply leave space. The meadow is patient with you.",
+            "c": 2
+          },
+          {
+            "title": "Private by default",
+            "body": "Your words are yours — a quiet place, not a feed.",
+            "c": 2
+          },
+          {
+            "fig": "$0",
+            "title": "Free & open source",
+            "body": "MIT-spirited community project on GitHub.",
+            "c": 2,
+            "variant": "glow"
+          }
+        ]
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Don't read every tile — call out the meadow as the signature feature, then let the rest breathe.",
+      "status": "none"
+    },
+    {
+      "id": "s7",
+      "position": 6,
+      "layout": "statement",
+      "props": {
+        "kicker": "Status",
+        "title": "A working app, ==open source== and ready to try.",
+        "body": "The full code lives on GitHub — read it, run it, or grow it with us."
+      },
+      "background": { "type": "color", "color": "var(--bg)" },
+      "animation": "cascade",
+      "transition": null,
+      "nav": null,
+      "notes": "Credibility beat: this isn't a concept — it ships. Invite people to look at the code or file their first issue.",
+      "status": "none"
+    },
+    {
+      "id": "s8",
+      "position": 7,
+      "layout": "cover",
+      "props": {
+        "kicker": "Grass Journal",
+        "title": "Plant your first ==blade== today.",
+        "subtitle": "github.com/Mike-Demo/grass-journal",
+        "image": "https://images.pexels.com/photos/422840/nature-grass-summer-bokeh-422840.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "dim": 0.55,
+        "foot": "Write a little each day · Watch your practice grow"
+      },
+      "background": {
+        "type": "image",
+        "url": "https://images.pexels.com/photos/422840/nature-grass-summer-bokeh-422840.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "dim": 0.62
+      },
+      "animation": "cascade",
+      "transition": "zoom",
+      "nav": null,
+      "notes": "Close gently: one blade today, a meadow in a month. Point to the repo link on screen.",
+      "status": "none"
+    }
+  ]
+}
